@@ -4,7 +4,6 @@ import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Station } from "../../types";
-import { MapPinPen } from "lucide-react";
 
 // Leaflet default icon fix für Next.js
 delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
