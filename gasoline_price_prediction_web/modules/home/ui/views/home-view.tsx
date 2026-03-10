@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useLocation } from "../../hooks/useLocation";
 import { useStations } from "../../hooks/useStations";
 import { LocationSearch } from "../components/location-search";
+import { SavingsCalculator } from "../components/savings-calculator";
 import { Location } from "../../types";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -56,6 +57,10 @@ const HomeView = () => {
 
             {mapLocation && (
                 <StationsMap location={mapLocation} stations={stations} />
+            )}
+
+            {stations.length > 0 && (
+                <SavingsCalculator stations={stations} />
             )}
         </div>
     );
