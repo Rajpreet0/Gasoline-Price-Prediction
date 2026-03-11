@@ -8,6 +8,7 @@ import { LocationSearch } from "../components/location-search";
 import { SavingsCalculator } from "../components/savings-calculator";
 import { Location } from "../../types";
 import { Spinner } from "@/components/ui/spinner";
+import { BrandFilter } from "../components/brand-filter";
 
 const StationsMap = dynamic(
     () => import("../components/stations-map").then((m) => m.StationsMap),
@@ -17,10 +18,13 @@ const StationsMap = dynamic(
 const HomeView = () => {
     const { location: browserLocation, error: locationError, loading: locationLoading } = useLocation();
     const [manualLocation, setManualLocation] = useState<Location | null>(null);
+    const [brandFilter, setBrandFilter] = useState<string[]>([]);
 
     const activeLocation = manualLocation ?? browserLocation;
 
-    const { stations, error: stationsError, loading: stationsLoading } = useStations(activeLocation);
+    const { stations, error: stationsError, loading: stationsLoading, lastUpdated } = useStations(activeLocation);
+
+    const filteredStations = brandFilter.length === 0 ? stations : stations.filter(s => brandFilter.some(b => s.name.toLowerCase().includes(b.toLowerCase())))
 
     const mapLocation = activeLocation
         ? { lat: activeLocation.latitude, lng: activeLocation.longitude }
@@ -32,7 +36,7 @@ const HomeView = () => {
 
     return (
         <div className="p-8 space-y-4">
-            <h1 className="text-4xl font-semibold">Gasoline Price Prediction</h1>
+            <h1 className="text-4xl font-semibold">Tankpreise in deiner Nähe</h1>
 
             <div className="flex items-center gap-3">
                 <LocationSearch onSelect={handleAddressSelect} />
@@ -55,12 +59,27 @@ const HomeView = () => {
             {stationsLoading && <p className="text-muted-foreground">Tankstellen werden geladen...</p>}
             {stationsError && <p className="text-red-500">{stationsError}</p>}
 
-            {mapLocation && (
-                <StationsMap location={mapLocation} stations={stations} />
+            {stations.length > 0 && (
+                <BrandFilter
+                    stations={stations}
+                    selected={brandFilter}
+                    onChange={setBrandFilter}
+                />
             )}
 
-            {stations.length > 0 && (
-                <SavingsCalculator stations={stations} />
+            {mapLocation && (
+                <>
+                    <StationsMap location={mapLocation} stations={filteredStations} />
+                    {lastUpdated && (
+                        <p className="text-xs text-muted-foreground text-right">
+                            Letztes Update: {lastUpdated.toLocaleTimeString("de-DE")}
+                        </p>
+                    )}
+                </>
+            )}
+
+            {filteredStations.length > 0 && (
+                <SavingsCalculator stations={filteredStations} />
             )}
         </div>
     );

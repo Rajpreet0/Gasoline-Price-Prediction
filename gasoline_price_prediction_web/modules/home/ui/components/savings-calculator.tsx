@@ -68,7 +68,7 @@ export function SavingsCalculator({ stations }: Props) {
     }, [stations, consumption, fuel, amount]);
 
     return (
-        <Card>
+        <Card className="rounded-sm">
             <CardHeader>
                 <CardTitle>Lohnt sich die Fahrt?</CardTitle>
             </CardHeader>
@@ -81,7 +81,7 @@ export function SavingsCalculator({ stations }: Props) {
                             <SelectTrigger className="w-28">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="p-2 rounded-sm">
                                 <SelectItem value="e5">E5</SelectItem>
                                 <SelectItem value="e10">E10</SelectItem>
                                 <SelectItem value="diesel">Diesel</SelectItem>
