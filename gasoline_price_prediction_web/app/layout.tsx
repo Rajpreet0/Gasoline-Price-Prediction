@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Arimo } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import "./globals.css";
 
 const arimo = Arimo({
@@ -17,11 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${arimo.className} antialiased`}
-      >
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${arimo.className} antialiased`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

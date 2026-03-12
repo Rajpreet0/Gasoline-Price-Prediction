@@ -9,6 +9,7 @@ import { SavingsCalculator } from "../components/savings-calculator";
 import { Location } from "../../types";
 import { Spinner } from "@/components/ui/spinner";
 import { BrandFilter } from "../components/brand-filter";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const StationsMap = dynamic(
     () => import("../components/stations-map").then((m) => m.StationsMap),
@@ -36,7 +37,10 @@ const HomeView = () => {
 
     return (
         <div className="p-8 space-y-4">
-            <h1 className="text-4xl font-semibold">Tankpreise in deiner Nähe</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-4xl font-semibold">Tankpreise in deiner Nähe</h1>
+                <ThemeToggle />
+            </div>
 
             <div className="flex items-center gap-3">
                 <LocationSearch onSelect={handleAddressSelect} />

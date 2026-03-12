@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Station } from "../../types";
 import { ListFilter } from "lucide-react";
@@ -21,7 +22,7 @@ function BrandLogo({ domain, logoUrl, label }: { domain?: string; logoUrl?: stri
     if (!logoUrl && !domain) return null;
     const src = logoUrl ?? `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
     return (
-        <img
+        <Image
             src={src}
             alt={label}
             width={16}

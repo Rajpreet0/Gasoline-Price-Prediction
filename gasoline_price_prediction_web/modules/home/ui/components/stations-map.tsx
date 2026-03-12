@@ -1,30 +1,69 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useEffect, useRef } from "react";
+import { Map, MapMarker, MarkerContent, MarkerPopup, useMap } from "@/components/ui/map";
 import { Station } from "../../types";
 
-// Leaflet default icon fix für Next.js
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-    iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+function FlyToLocation({ lng, lat }: { lng: number; lat: number }) {
+    const { map, isLoaded } = useMap();
+    const isFirst = useRef(true);
 
-const makeIcon = (color: string) => new L.Icon({
-    iconUrl: `https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-${color}.png`,
-    shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-});
+    useEffect(() => {
+        if (!map || !isLoaded) return;
+        if (isFirst.current) {
+            isFirst.current = false;
+            return;
+        }
+        map.flyTo({ center: [lng, lat], zoom: 13, duration: 1200 });
+    }, [map, isLoaded, lng, lat]);
 
-const cheapestIcon = makeIcon("gold");
-const openIcon = makeIcon("green");
-const closedIcon = makeIcon("red");
-const userIcon = makeIcon("blue");
+    return null;
+}
+
+function RadiusCircle({ lng, lat, radiusKm }: { lng: number; lat: number; radiusKm: number }) {
+    const { map, isLoaded } = useMap();
+
+    useEffect(() => {
+        if (!map || !isLoaded) return;
+
+        // Erzeuge einen Kreis-Polygon via GeoJSON (64 Punkte)
+        const points = 64;
+        const coords: [number, number][] = [];
+        const earthRadius = 6371;
+        const latR = (lat * Math.PI) / 180;
+        for (let i = 0; i <= points; i++) {
+            const angle = (i * 2 * Math.PI) / points;
+            const dLat = (radiusKm / earthRadius) * (180 / Math.PI);
+            const dLng = dLat / Math.cos(latR);
+            coords.push([lng + dLng * Math.sin(angle), lat + dLat * Math.cos(angle)]);
+        }
+
+        const sourceId = "radius-circle";
+        const fillId = "radius-circle-fill";
+        const outlineId = "radius-circle-outline";
+
+        if (map.getSource(sourceId)) {
+            map.removeLayer(fillId);
+            map.removeLayer(outlineId);
+            map.removeSource(sourceId);
+        }
+
+        map.addSource(sourceId, {
+            type: "geojson",
+            data: { type: "Feature", geometry: { type: "Polygon", coordinates: [coords] }, properties: {} },
+        });
+        map.addLayer({ id: fillId, type: "fill", source: sourceId, paint: { "fill-color": "#3b82f6", "fill-opacity": 0.05 } });
+        map.addLayer({ id: outlineId, type: "line", source: sourceId, paint: { "line-color": "#3b82f6", "line-width": 1.5, "line-opacity": 0.6 } });
+
+        return () => {
+            if (map.getLayer(fillId)) map.removeLayer(fillId);
+            if (map.getLayer(outlineId)) map.removeLayer(outlineId);
+            if (map.getSource(sourceId)) map.removeSource(sourceId);
+        };
+    }, [map, isLoaded, lng, lat, radiusKm]);
+
+    return null;
+}
 
 type MapLocation = { lat: number; lng: number };
 type Props = { location: MapLocation; stations: Station[] };
@@ -35,10 +74,19 @@ function findCheapest(stations: Station[], fuel: "e5" | "e10" | "diesel"): strin
     return open.reduce((a, b) => (a[fuel]! < b[fuel]! ? a : b)).id;
 }
 
+function PinIcon({ color }: { color: string }) {
+    return (
+        <div
+            className="relative flex h-7 w-7 items-center justify-center rounded-full border-2 border-white shadow-lg"
+            style={{ backgroundColor: color }}
+        />
+    );
+}
+
 function Legend() {
     return (
-        <div className="absolute bottom-8 right-2 z-1000 bg-white rounded-lg shadow-md p-3 text-sm space-y-1.5">
-            <p className="font-semibold text-xs uppercase text-gray-500 mb-2">Legende</p>
+        <div className="absolute bottom-8 right-2 z-10 bg-background text-foreground rounded-lg shadow-md p-3 text-sm space-y-1.5 pointer-events-none">
+            <p className="font-semibold text-xs uppercase text-muted-foreground mb-2">Legende</p>
             <div className="flex items-center gap-2">
                 <span className="inline-block w-3 h-3 rounded-full bg-blue-500" />
                 <span>Dein Standort</span>
@@ -68,40 +116,42 @@ export function StationsMap({ location, stations }: Props) {
         id === cheapestE5 || id === cheapestE10 || id === cheapestDiesel;
 
     return (
-        <div className="relative">
-            <MapContainer
-                center={[location.lat, location.lng]}
+        <div className="relative h-125 w-full rounded-lg overflow-hidden">
+            <Map
+                center={[location.lng, location.lat]}
                 zoom={13}
-                style={{ width: "100%", height: 500, borderRadius: "0.5rem" }}
+                className="h-125 w-full"
             >
-                <TileLayer
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                <FlyToLocation lng={location.lng} lat={location.lat} />
+                <RadiusCircle lng={location.lng} lat={location.lat} radiusKm={5} />
 
-                <Circle
-                    center={[location.lat, location.lng]}
-                    radius={5000}
-                    pathOptions={{ color: "#3b82f6", fillColor: "#3b82f6", fillOpacity: 0.05 }}
-                />
+                {/* User location marker */}
+                <MapMarker longitude={location.lng} latitude={location.lat}>
+                    <MarkerContent>
+                        <PinIcon color="#3b82f6" />
+                    </MarkerContent>
+                    <MarkerPopup closeButton>
+                        <p className="font-semibold text-sm">Dein Standort</p>
+                    </MarkerPopup>
+                </MapMarker>
 
-                <Marker position={[location.lat, location.lng]} icon={userIcon}>
-                    <Popup>Dein Standort</Popup>
-                </Marker>
-
+                {/* Station markers */}
                 {stations.map((station) => {
                     const cheap = isCheapest(station.id);
-                    const icon = cheap ? cheapestIcon : station.isOpen ? openIcon : closedIcon;
+                    const color = cheap ? "#eab308" : station.isOpen ? "#22c55e" : "#ef4444";
 
                     return (
-                        <Marker key={station.id} position={[station.lat, station.lng]} icon={icon}>
-                            <Popup>
-                                <div className="space-y-1 text-sm min-w-45">
+                        <MapMarker key={station.id} longitude={station.lng} latitude={station.lat}>
+                            <MarkerContent>
+                                <PinIcon color={color} />
+                            </MarkerContent>
+                            <MarkerPopup closeButton>
+                                <div className="space-y-1 text-sm min-w-44">
                                     <p className="font-semibold">{station.name}</p>
                                     {cheap && (
                                         <p className="text-yellow-600 font-medium text-xs">⭐ Günstigste in der Nähe</p>
                                     )}
-                                    <p className="text-gray-500 text-xs">{station.street}, {station.place}</p>
+                                    <p className="text-muted-foreground text-xs">{station.street}, {station.place}</p>
                                     <p>{station.isOpen ? "✅ Geöffnet" : "❌ Geschlossen"}</p>
                                     <div className="flex gap-3 pt-1 flex-wrap">
                                         {station.e5 && (
@@ -120,13 +170,13 @@ export function StationsMap({ location, stations }: Props) {
                                             </span>
                                         )}
                                     </div>
-                                    <p className="text-gray-400 text-xs">{station.dist.toFixed(1)} km entfernt</p>
+                                    <p className="text-muted-foreground text-xs">{station.dist.toFixed(1)} km entfernt</p>
                                 </div>
-                            </Popup>
-                        </Marker>
+                            </MarkerPopup>
+                        </MapMarker>
                     );
                 })}
-            </MapContainer>
+            </Map>
             <Legend />
         </div>
     );
