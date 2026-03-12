@@ -34,7 +34,7 @@ export function LocationSearch({ onSelect }: Props) {
 
     return (
         <div className="relative w-full max-w-md">
-            <div className="bg-white rounded-md border flex items-center p-1">
+            <div className="bg-background rounded-md border flex items-center p-1">
                 <Search size={20} className="ml-2"/>
                 <Input
                     placeholder="Adresse suchen..."
@@ -48,11 +48,11 @@ export function LocationSearch({ onSelect }: Props) {
                 )}
             </div>
             {open && results.length > 0 && (
-                <ul className="absolute z-9999 w-full mt-1 bg-white border rounded-md shadow-lg max-h-60 overflow-auto text-sm">
+                <ul className="absolute z-9999 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto text-sm">
                     {results.map((r, i) => (
                         <li
                             key={i}
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer truncate"
+                            className="px-3 py-2 hover:bg-accent cursor-pointer truncate"
                             onClick={() => handleSelect(r)}
                         >
                             {r.display_name}
