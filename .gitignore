@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Secrets
+config.py
+
+# Database
+*.db
+*.db-wal
+*.db-shm
+
+# Trained models
+models/saved/*.joblib
+
+# Data files
+data/csv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Claude internal
+.claude/
+
+# Node
+node_modules/
+
+# IPYNB Skript
+./*.ipynb
